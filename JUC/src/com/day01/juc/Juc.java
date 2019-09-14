@@ -1,13 +1,18 @@
 package com.day01.juc;
 
+
+import org.junit.Test;
+
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.*;
+import java.util.stream.LongStream;
 
 public class Juc {
     public static void main(String[] args) {
@@ -50,13 +55,13 @@ public class Juc {
         } catch (Exception e) {
             e.printStackTrace();
         }*/
-        /*Clerk clerk = new Clerk();
+        Clerk clerk = new Clerk();
         Consumer consumer = new Consumer(clerk);
         Productor productor=new Productor(clerk);
         new Thread(consumer,"消费者 A").start();
         new Thread(new Consumer(clerk),"消费者 B").start();
         new Thread(productor,"生产者 A").start();
-        new Thread(new Productor(clerk),"生产者 B").start();*/
+        new Thread(new Productor(clerk),"生产者 B").start();
         AlterThread alterThread = new AlterThread();
         new Thread(new Runnable() {
             @Override
@@ -84,8 +89,8 @@ public class Juc {
             }
         },"C").start();
 
-
     }
+
 
 
 
@@ -398,4 +403,103 @@ class HasStatic{
                 HasStatic.x--;
               System.out.println("x="+x);
      }
-  }
+  }//笔试题
+class TestReadWriteLock{
+    public static void main(String[] args) {
+        TestReadWriteLock readWriteLock=new TestReadWriteLock();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                readWriteLock.set((int)(Math.random()*101));
+            }
+        },"write").start();
+        for (int i = 0; i < 100; i++) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    readWriteLock.get();
+                }
+            }).start();
+        }
+    }
+    private int number;
+    private ReadWriteLock lock=new ReentrantReadWriteLock();
+    public void get(){
+        lock.readLock().lock();
+        try {
+            System.out.println(Thread.currentThread().getName()+" : "+number);
+        }finally {
+            lock.readLock().unlock();
+        }
+    }
+    public void set(int number){
+        lock.writeLock().lock();
+        try{
+            System.out.println("write");
+            this.number=number;
+        }finally {
+            lock.writeLock().unlock();
+        }
+    }
+}
+
+//线程池
+class ThreadPool{
+    public static void main(String[] args){
+        ExecutorService pool=Executors.newFixedThreadPool(5);
+        pool.submit(new Thread(new Runnable(){
+            public void run(){
+                for(int i=0;i<=100;i++){
+                    if(i%2==0){
+                        System.out.println(i);
+                    }
+                }
+            }
+        }));
+        pool.shutdown();
+    }
+
+}
+class ThreadPoolExecutor{
+
+        public static void main(String[] args) throws Exception {
+            ScheduledExecutorService pool=Executors.newScheduledThreadPool(5);
+            for (int i = 0; i <5; i++) {
+                Future<Integer> result=pool.schedule(new Callable<Integer>(){
+                    @Override
+                    public Integer call() throws Exception {
+                        int num=new Random().nextInt(100);
+                        System.out.println(Thread.currentThread().getName()+" : "+num);
+                        return num;
+                    }
+                },3,TimeUnit.SECONDS);
+                System.out.println(result.get());
+            }
+
+            pool.shutdown();
+        }
+
+
+    }
+class TestFolkJoin {
+    public static void main(String[] args) {
+        Instant start = Instant.now();
+        Long sum = LongStream.rangeClosed(0L, 100000000000L).parallel().reduce(0L, Long::sum);
+        System.out.println(sum);
+        Instant end = Instant.now();
+        System.out.println(Duration.between(start, end).toMillis());
+    }
+}
+
+class test{
+       public static void main(String[] args) {
+           Instant start = Instant.now();
+           long sum=0L;
+           for (long i=0L;i<=100000000000L;i++){
+               sum+=i;
+           }
+           System.out.println(sum);
+           Instant end = Instant.now();
+           System.out.println(Duration.between(start, end).toMillis());
+       }
+    }
